@@ -49,14 +49,43 @@ public class TestBoardCreation {
   public void testBoardSizeAboveRangeFails() {
     game.setBoardSize(11);
   }
+  
+  @Test
+  public void testSimpleGameSelection() {
+    game = new SimpleGame();
+    
+    assertTrue(game instanceof SimpleGame);
+  }
+  
+  @Test
+  public void testGeneralGameSelection() {
+    game = new GeneralGame();
+    
+    assertTrue(game instanceof GeneralGame);
+  }
    
   @Test
-  public void successfulGameCreation(){
+  public void successfulSimpleGameCreation(){
+    game = new SimpleGame();
+    
     game.setBoardSize(5);
     
     game.startGame();
     
     assertEquals(game.getGameState(), SosGame.GameState.PLAYING);
+    assertTrue(game instanceof SimpleGame);
+  }
+  
+  @Test
+  public void successfulGeneralGameCreation(){
+    game = new GeneralGame();
+    
+    game.setBoardSize(5);
+    
+    game.startGame();
+    
+    assertEquals(game.getGameState(), SosGame.GameState.PLAYING);
+    assertTrue(game instanceof GeneralGame);
   }
   
   @Test (expected = RuntimeException.class)

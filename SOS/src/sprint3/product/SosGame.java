@@ -118,13 +118,13 @@ public abstract class SosGame {
   }
   
   // Abstract Functions
-  abstract void makeMove(int row, int col);
+  public abstract void makeMove(int row, int col);
   
-  abstract String showScore();
+  public abstract String showScore();
   
-  abstract boolean hasWon();
+  protected abstract boolean hasWon();
   
-  abstract boolean isDraw();
+  protected abstract boolean isDraw();
   
   // Validation Functions
   protected boolean isValidMove(int row, int col) {

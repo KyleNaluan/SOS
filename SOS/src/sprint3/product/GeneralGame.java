@@ -62,7 +62,7 @@ public class GeneralGame extends SosGame {
   // No need to check if board is full in these methods, check before calling them in makeMove
   
   @Override
-  public boolean hasWon() {
+  protected boolean hasWon() {
     if (turn == 'B') {
       if (bluePlayer.getSosCount() > redPlayer.getSosCount()) {
         return true;
@@ -79,7 +79,7 @@ public class GeneralGame extends SosGame {
   }
   
   @Override
-  public boolean isDraw() {
+  protected boolean isDraw() {
     if (bluePlayer.getSosCount() == redPlayer.getSosCount()) {
         return true;
     }

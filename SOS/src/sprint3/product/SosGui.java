@@ -172,7 +172,7 @@ public class SosGui extends Application {
     lineOverlay = new Pane();
     grid = new GridPane();
     
-    // Set Grid as Center
+    // Set Grid as Center | Translate based on size of lineOverlay because Pane can't be aligned
     grid.setLayoutX(0);
     grid.setLayoutY(0);
     grid.translateXProperty().bind(Bindings.divide(lineOverlay.widthProperty().subtract(grid.widthProperty()), 2));
