@@ -49,11 +49,4 @@ public class TestEmptyBoard {
       assertNull(game.getCell(2, 5));
   }
   
-  
-  
-  
-  
-  
-
-
 }

@@ -1,0 +1,61 @@
+.root{
+	-fx-background-color: #383838;
+	-fx-font-size: 12.0pt;
+}
+
+.normal-text{
+	-fx-fill: #FFFFFF;
+	-fx-font-weight: bold;
+	-fx-font-size: 15.0pt;
+}
+
+.normal-text.title{
+	-fx-font-size: 25.0pt;
+}
+
+.label{
+	-fx-text-fill: #FFFFFF;
+	-fx-font-weight: bold;
+	-fx-font-size: 15.0pt;
+}
+
+.label-error{
+	-fx-text-fill: #FF0000;
+}
+
+.button{
+	-fx-background-color: #eb4034;
+	-fx-text-fill: #FFFFFF;
+	-fx-background-radius: 5.0;
+	-fx-font-size: 15.0;
+	-fx-font-weight: bold;
+}
+
+.button-blue{
+	-fx-background-color: #3440eb;	
+}
+
+.radio-button{
+	-fx-text-fill: #FFFFFF;
+	-fx-font-size: 10.0pt;
+}
+
+.check-box{
+	-fx-text-fill: #FFFFFF;
+	-fx-font-weight: bold;
+}
+
+.grid-square{
+	-fx-border-color: #000000;
+	-fx-background-color: #FFFFFF;
+}
+
+.line-blue{
+	-fx-stroke: #3440eb;
+	-fx-stroke-width: 5.0;
+}
+
+.line-red{
+	-fx-stroke: #eb4034;
+	-fx-stroke-width: 5.0;
+}

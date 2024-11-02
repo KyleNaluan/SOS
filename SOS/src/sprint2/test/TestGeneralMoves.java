@@ -76,5 +76,4 @@ public class TestGeneralMoves {
     assertEquals(game.getTurn(), 'R');
   }
   
-  
 }

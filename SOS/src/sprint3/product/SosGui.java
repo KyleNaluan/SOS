@@ -1,6 +1,9 @@
-package sprint2.product;
+package sprint3.product;
+
+import java.util.ArrayList;
 
 import javafx.application.Application;
+import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -15,7 +18,10 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
@@ -23,9 +29,11 @@ import javafx.stage.Stage;
 public class SosGui extends Application {
 
   private GridSquare[][] gridSquares;
-  private GridPane pane;
+  private GridPane grid;
+  private Pane lineOverlay;
 
-  private Label gameStatus = new Label("Current Turn: Blue");
+  private Label gameStatus = new Label("");
+  private Label gameScore = new Label("");
   private Label errorLabel;
   
   private RadioButton simpleGame;
@@ -53,11 +61,7 @@ public class SosGui extends Application {
   }
 
   @Override
-  public void start(Stage primaryStage) throws Exception {
-    if (game==null) {
-      game = new SosGame();
-    }
-    
+  public void start(Stage primaryStage) throws Exception {    
     primaryStage.setTitle("SOS");
 
     // Plain Text
@@ -99,9 +103,12 @@ public class SosGui extends Application {
     replayButton.setOnAction(e -> resetGame());
     newGameButton.setOnAction(e -> startNewGame());
     endGameButton.setOnAction(e -> endGame());
+    
+    replayButton.setDisable(true);
 
     // Check boxes
     CheckBox recordBox = new CheckBox("Record Game");
+    recordBox.setDisable(true);
 
     // Radio Buttons
     simpleGame = new RadioButton("Simple Game");
@@ -146,6 +153,9 @@ public class SosGui extends Application {
     blueS.setSelected(true);
     redHuman.setSelected(true);
     redS.setSelected(true);
+    
+    blueComp.setDisable(true);
+    redComp.setDisable(true);
 
     // Text Fields
     sizeTextField = new TextField();
@@ -153,16 +163,20 @@ public class SosGui extends Application {
     
     sizeTextField.setOnAction(e -> setBoardSize());
     
- 
-
     // Spacers
     Pane spacer = new Pane();
     HBox.setHgrow(spacer, Priority.ALWAYS);
     spacer.setMinSize(10, 1);
 
-    // GridPane
-    pane = new GridPane();
-    drawBoard();
+    // Panes
+    lineOverlay = new Pane();
+    grid = new GridPane();
+    
+    // Set Grid as Center
+    grid.setLayoutX(0);
+    grid.setLayoutY(0);
+    grid.translateXProperty().bind(Bindings.divide(lineOverlay.widthProperty().subtract(grid.widthProperty()), 2));
+    grid.translateYProperty().bind(Bindings.divide(lineOverlay.heightProperty().subtract(grid.heightProperty()), 2));
 
     // Layout
     BorderPane root = new BorderPane();
@@ -172,23 +186,24 @@ public class SosGui extends Application {
     VBox left = new VBox(blueLabel, blueLabelLine, blueHuman, blueS, blueO, blueComp);
     VBox right = new VBox(redLabel, redLabelLine, redHuman, redS, redO, redComp);
     BorderPane bottom = new BorderPane();
+    VBox statusLabels = new VBox(gameScore,gameStatus);
     VBox resetButtons = new VBox(replayButton, newGameButton, endGameButton);
 
     root.setTop(top);
     root.setLeft(left);
-    root.setCenter(pane);
+    root.setCenter(lineOverlay);
     root.setRight(right);
     root.setBottom(bottom);
     bottom.setLeft(recordBox);
-    bottom.setCenter(gameStatus);
+    bottom.setCenter(statusLabels);
     bottom.setRight(resetButtons);
 
     // Alignment
     header.setAlignment(Pos.CENTER_LEFT);
     errorMessage.setAlignment(Pos.CENTER);
     left.setAlignment(Pos.CENTER);
-    pane.setAlignment(Pos.CENTER);
     right.setAlignment(Pos.CENTER);
+    statusLabels.setAlignment(Pos.CENTER);
 
     // Padding and Spacing
     header.setPadding(new Insets(10, 10, 30, 10));
@@ -208,8 +223,8 @@ public class SosGui extends Application {
     primaryStage.show();
   }
   
-  public void setUpGrid(GridPane grid) {
-    grid.getChildren().clear();
+  public void setUpBoard() {
+    clearBoard();
     int rows = game.getTotalRows();
     int cols = game.getTotalColumns();
     gridSquares = new GridSquare[rows][cols];
@@ -218,21 +233,17 @@ public class SosGui extends Application {
         grid.add(gridSquares[i][j] = new GridSquare(i,j), j, i);
       }
     }
+    
+    lineOverlay.getChildren().add(grid);
   }
   
-  public void resetGrid(GridPane grid) {
-    int rows = grid.getRowCount();
-    int cols = grid.getColumnCount();
+  public void clearBoard() {
+    lineOverlay.getChildren().clear();
     grid.getChildren().clear();
-    gridSquares = new GridSquare[rows][cols];
-    for (int i = 0; i < rows; i++) {
-      for (int j = 0; j < cols; j++) {
-        grid.add(gridSquares[i][j] = new GridSquare(i,j), j, i);
-      }
-    }
   }
   
   public void drawBoard() {
+    // Draw S & O Characters
     for (int row = 0; row < game.getTotalRows(); row++) {
       for (int col = 0; col < game.getTotalColumns(); col++) {
         gridSquares[row][col].getChildren().clear();
@@ -243,28 +254,58 @@ public class SosGui extends Application {
         }
       }
     }
+    
+    // Draw Lines for SOS Sequences
+    ArrayList<SosSequence> sosSequences = game.getSosSequences();
+    
+    int r1;
+    int c1;
+    int r2;
+    int c2;
+    char player;
+    Paint color;
+    
+    
+    for (int i = 0; i < sosSequences.size(); i++) {
+      r1 = sosSequences.get(i).getR1();
+      c1 = sosSequences.get(i).getC1();
+      r2 = sosSequences.get(i).getR2();
+      c2 = sosSequences.get(i).getC2();
+      player = sosSequences.get(i).getPlayer();
+      
+      if (player == 'B') {
+        color = Color.BLUE;
+      } else {
+        color = Color.RED;
+      }
+      
+      drawLine(r1,c1,r2,c2,color);
+    }
   }
   
   private void selectGame() {
     if (simpleGame.isSelected()) {
-      game.setGameMode(SosGame.GameMode.SIMPLE);
+      game = new SimpleGame();
     } else if (generalGame.isSelected()) {
-      game.setGameMode(SosGame.GameMode.GENERAL);
+      game = new GeneralGame();
     }
   }
   
   private void setBoardSize() {
     String textInput = sizeTextField.getText();
-
-    try {
-      boardSize = Integer.parseInt(textInput);
-      game.setBoardSize(boardSize);
-      errorLabel.setText("");
-    } catch (IllegalArgumentException e) {
-      errorLabel.setText(e.toString());
-    } catch (Exception e) {
-      errorLabel.setText("Invalid Input");
+    
+    if (!(game == null)) {
+      try {
+        boardSize = Integer.parseInt(textInput);
+        game.setBoardSize(boardSize);
+        errorLabel.setText("");
+      } catch (IllegalArgumentException e) {
+        errorLabel.setText(e.toString());
+      } catch (Exception e) {
+        errorLabel.setText("Invalid Input");
+      }
     }
+    
   }
   
   private void setBlueMove() {
@@ -283,14 +324,33 @@ public class SosGui extends Application {
     }
   }
   
+  public void setStatusLabels() {
+    gameStatus.setText("Current Turn: Blue");
+    
+    if (simpleGame.isSelected()) {
+      gameScore.setText("");
+    } else if (generalGame.isSelected()) {
+      gameScore.setText("Blue: 0 | Red: 0"); 
+    }
+  }
+  
   public void startNewGame() {
     try {
+      if (!(simpleGame.isSelected() || generalGame.isSelected())) {
+        throw new RuntimeException("Please Select a Game Mode");
+      }
+      setBoardSize();
       game.startGame();
-      setUpGrid(pane);
+      setUpBoard();
+      setStatusLabels();
+      // Make sure moves still correspond to what is selected, instead of reset to S
+      setBlueMove();
+      setRedMove();
       // Disable the ability to change board size and game mode once game has started
       simpleGame.setDisable(true);
       generalGame.setDisable(true);
       sizeTextField.setDisable(true);
+      newGameButton.setDisable(true);
     } catch (RuntimeException e) {
       errorLabel.setText(e.toString());
     }
@@ -298,22 +358,52 @@ public class SosGui extends Application {
   
   public void resetGame() {
     game.resetGame();
-    setUpGrid(pane);
+    setUpBoard();
+    setStatusLabels();
   }
   
   public void endGame() {
     // Set game window back to clean
-    game = new SosGame();
-    gameStatus.setText("Current Turn: Blue");
+    game = null;
+    clearBoard();
+    gameStatus.setText("");
+    gameScore.setText("");
     
-    // Re-enable game settings so user can choose
+    enableSelection();
+  }
+  
+  public void enableSelection() {
+    // Allow Game Setup Buttons to be Interactable Again
     simpleGame.setDisable(false);
     generalGame.setDisable(false);
     sizeTextField.setDisable(false);
+    newGameButton.setDisable(false);
     
+    // Clear Previous Game Settings
     simpleGame.setSelected(false);
     generalGame.setSelected(false);
     sizeTextField.clear();
+  }
+  
+  public void drawLine(int r1, int c1, int r2, int c2, Paint color) {
+    // Line starts/ends (row/col) cells over, then halfway into cell
+    double startX = (c1 * 50) + 25;
+    double startY = (r1 * 50) + 25;
+    double endX = (c2 * 50) + 25;
+    double endY = (r2 * 50) + 25;
+    
+    // Offset from centering grid
+    startX += grid.getTranslateX();
+    startY += grid.getTranslateY();
+    endX += grid.getTranslateX();
+    endY += grid.getTranslateY();
+    
+    Line line = new Line(startX, startY, endX, endY);
+    line.setStroke(color);
+    line.setStrokeWidth(2);
+   
+    // Add to lineOverlay, rather than gridSquares, so line can overlap the board
+    lineOverlay.getChildren().add(line);
   }
 
   public class GridSquare extends Pane {
@@ -329,14 +419,16 @@ public class SosGui extends Application {
       this.setOnMouseClicked(e -> handleMouseClick());
     }
     
-    private void handleMouseClick() {
-      if (game.getGameMode() == SosGame.GameMode.SIMPLE) {
-        game.makeMoveSimpleGame(row, col);
+    private void handleMouseClick() {      
+      if (game.getGameState() == SosGame.GameState.PLAYING) {
+        game.makeMove(row, col);
+        drawBoard();
       }
-      if (game.getGameMode() == SosGame.GameMode.GENERAL) {
-        game.makeMoveGeneralGame(row, col);
+      
+      if (game.getGameState() != SosGame.GameState.PLAYING) {
+        enableSelection();
       }
-      drawBoard();
+      
       displayGameStatus();
     }
     
@@ -356,13 +448,20 @@ public class SosGui extends Application {
     }
     
     private void displayGameStatus() {
+      gameScore.setText(game.showScore());
+      
       if(game.getGameState() == SosGame.GameState.PLAYING) {
         if(game.getTurn() == 'B') {
           gameStatus.setText("Current Turn: Blue");
         } else {
           gameStatus.setText("Current Turn: Red");
         }
-        
+      } else if (game.getGameState() == SosGame.GameState.BLUE_WON) {
+        gameStatus.setText("Blue Won!");
+      } else if (game.getGameState() == SosGame.GameState.RED_WON) {
+        gameStatus.setText("Red Won!");
+      } else if (game.getGameState() == SosGame.GameState.DRAW) {
+        gameStatus.setText("Draw Game");
       }
     }
 

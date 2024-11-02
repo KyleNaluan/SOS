@@ -50,6 +50,5 @@ public class TestSimpleMoves {
     game.makeMoveSimpleGame(0, 5);
     assertEquals(game.getTurn(), 'B');
   }
-  
 
 }
