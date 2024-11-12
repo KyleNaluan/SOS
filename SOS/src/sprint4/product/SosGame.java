@@ -99,10 +99,6 @@ public abstract class SosGame {
     currentPlayer = (turn == 'B') ? bluePlayer : redPlayer;
   }
 
-  public void setEmpty(int row, int col) {
-    board[row][col] = Cell.EMPTY;
-  }
-
   // Get Functions
   public int getTotalRows() {
     return totalRows;
@@ -155,7 +151,7 @@ public abstract class SosGame {
     }
   }
 
-  public void placeLetter(int row, int col, int choice) {
+  public void placeLetter(int row, int col, char choice) {
     board[row][col] = (choice == 'S') ? Cell.S : Cell.O;
   }
 
