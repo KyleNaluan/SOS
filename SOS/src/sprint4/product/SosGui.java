@@ -1,7 +1,8 @@
-package sprint3.product;
+package sprint4.product;
 
 import java.util.ArrayList;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.beans.binding.Bindings;
 import javafx.geometry.Insets;
@@ -24,6 +25,7 @@ import javafx.scene.paint.Paint;
 import javafx.scene.shape.Line;
 import javafx.scene.text.Text;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 
 public class SosGui extends Application {
 
@@ -34,7 +36,7 @@ public class SosGui extends Application {
   private Label gameStatus = new Label("");
   private Label gameScore = new Label("");
   private Label errorLabel;
-  
+
   private RadioButton simpleGame;
   private RadioButton generalGame;
   private RadioButton blueHuman;
@@ -45,14 +47,14 @@ public class SosGui extends Application {
   private RadioButton redS;
   private RadioButton redO;
   private RadioButton redComp;
-  
+
   private Button replayButton;
   private Button newGameButton;
   private Button endGameButton;
-  
+
   private TextField sizeTextField;
   private int boardSize;
-  
+
   static private SosGame game;
 
   public static void main(String[] args) {
@@ -60,7 +62,7 @@ public class SosGui extends Application {
   }
 
   @Override
-  public void start(Stage primaryStage) throws Exception {    
+  public void start(Stage primaryStage) throws Exception {
     primaryStage.setTitle("SOS");
 
     // Plain Text
@@ -98,11 +100,11 @@ public class SosGui extends Application {
     replayButton.setPrefWidth(100);
     newGameButton.setPrefWidth(100);
     endGameButton.setPrefWidth(100);
-    
+
     replayButton.setOnAction(e -> resetGame());
     newGameButton.setOnAction(e -> startNewGame());
     endGameButton.setOnAction(e -> endGame());
-    
+
     replayButton.setDisable(true);
 
     // Check boxes
@@ -120,15 +122,20 @@ public class SosGui extends Application {
     redS = new RadioButton("S");
     redO = new RadioButton("O");
     redComp = new RadioButton("Computer");
-    
+
     // Action Listeners
     simpleGame.setOnAction(e -> selectGame());
     generalGame.setOnAction(e -> selectGame());
-    
+
     blueS.setOnAction(e -> setBlueMove());
     blueO.setOnAction(e -> setBlueMove());
     redS.setOnAction(e -> setRedMove());
     redO.setOnAction(e -> setRedMove());
+
+    blueHuman.setOnAction(e -> setBluePlayer());
+    blueComp.setOnAction(e -> setBluePlayer());
+    redHuman.setOnAction(e -> setRedPlayer());
+    redComp.setOnAction(e -> setRedPlayer());
 
     // Toggle Groups
     ToggleGroup gameSelectButtons = new ToggleGroup();
@@ -152,16 +159,13 @@ public class SosGui extends Application {
     blueS.setSelected(true);
     redHuman.setSelected(true);
     redS.setSelected(true);
-    
-    blueComp.setDisable(true);
-    redComp.setDisable(true);
 
     // Text Fields
     sizeTextField = new TextField();
     sizeTextField.setPrefWidth(50);
-    
+
     sizeTextField.setOnAction(e -> setBoardSize());
-    
+
     // Spacers
     Pane spacer = new Pane();
     HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -170,8 +174,9 @@ public class SosGui extends Application {
     // Panes
     lineOverlay = new Pane();
     grid = new GridPane();
-    
-    // Set Grid as Center | Translate based on size of lineOverlay because Pane can't be aligned
+
+    // Set Grid as Center | Translate based on size of lineOverlay because Pane
+    // can't be aligned
     grid.setLayoutX(0);
     grid.setLayoutY(0);
     grid.translateXProperty().bind(Bindings.divide(lineOverlay.widthProperty().subtract(grid.widthProperty()), 2));
@@ -185,7 +190,7 @@ public class SosGui extends Application {
     VBox left = new VBox(blueLabel, blueLabelLine, blueHuman, blueS, blueO, blueComp);
     VBox right = new VBox(redLabel, redLabelLine, redHuman, redS, redO, redComp);
     BorderPane bottom = new BorderPane();
-    VBox statusLabels = new VBox(gameScore,gameStatus);
+    VBox statusLabels = new VBox(gameScore, gameStatus);
     VBox resetButtons = new VBox(replayButton, newGameButton, endGameButton);
 
     root.setTop(top);
@@ -213,7 +218,6 @@ public class SosGui extends Application {
     left.setSpacing(5);
     right.setSpacing(5);
     resetButtons.setSpacing(5);
-    
 
     // Scene
     Scene scene = new Scene(root, 1000, 500);
@@ -221,7 +225,7 @@ public class SosGui extends Application {
     primaryStage.setScene(scene);
     primaryStage.show();
   }
-  
+
   public void setUpBoard() {
     clearBoard();
     int rows = game.getTotalRows();
@@ -229,18 +233,18 @@ public class SosGui extends Application {
     gridSquares = new GridSquare[rows][cols];
     for (int i = 0; i < rows; i++) {
       for (int j = 0; j < cols; j++) {
-        grid.add(gridSquares[i][j] = new GridSquare(i,j), j, i);
+        grid.add(gridSquares[i][j] = new GridSquare(i, j), j, i);
       }
     }
-    
+
     lineOverlay.getChildren().add(grid);
   }
-  
+
   public void clearBoard() {
     lineOverlay.getChildren().clear();
     grid.getChildren().clear();
   }
-  
+
   public void drawBoard() {
     // Draw S & O Characters
     for (int row = 0; row < game.getTotalRows(); row++) {
@@ -253,35 +257,34 @@ public class SosGui extends Application {
         }
       }
     }
-    
+
     // Draw Lines for SOS Sequences
     ArrayList<SosSequence> sosSequences = game.getSosSequences();
-    
+
     int r1;
     int c1;
     int r2;
     int c2;
     char player;
     Paint color;
-    
-    
+
     for (int i = 0; i < sosSequences.size(); i++) {
       r1 = sosSequences.get(i).getR1();
       c1 = sosSequences.get(i).getC1();
       r2 = sosSequences.get(i).getR2();
       c2 = sosSequences.get(i).getC2();
       player = sosSequences.get(i).getPlayer();
-      
+
       if (player == 'B') {
         color = Color.BLUE;
       } else {
         color = Color.RED;
       }
-      
-      drawLine(r1,c1,r2,c2,color);
+
+      drawLine(r1, c1, r2, c2, color);
     }
   }
-  
+
   private void selectGame() {
     if (simpleGame.isSelected()) {
       game = new SimpleGame();
@@ -289,10 +292,10 @@ public class SosGui extends Application {
       game = new GeneralGame();
     }
   }
-  
+
   private void setBoardSize() {
     String textInput = sizeTextField.getText();
-    
+
     if (!(game == null)) {
       try {
         boardSize = Integer.parseInt(textInput);
@@ -304,111 +307,199 @@ public class SosGui extends Application {
         errorLabel.setText("Invalid Input");
       }
     }
-    
+
   }
-  
+
+  private void setBluePlayer() {
+    if (blueHuman.isSelected()) {
+      if (game != null) {
+        game.setBluePlayer('H');
+      }
+      blueS.setDisable(false);
+      blueO.setDisable(false);
+    } else {
+      if (game != null) {
+        game.setBluePlayer('C');
+      }
+      blueS.setDisable(true);
+      blueO.setDisable(true);
+    }
+  }
+
+  private void setRedPlayer() {
+    if (redHuman.isSelected()) {
+      if (game != null) {
+        game.setRedPlayer('H');
+      }
+      redS.setDisable(false);
+      redO.setDisable(false);
+    } else {
+      if (game != null) {
+        game.setRedPlayer('C');
+      }
+      redS.setDisable(true);
+      redO.setDisable(true);
+    }
+  }
+
   private void setBlueMove() {
-    if (blueS.isSelected()) {
-      game.setBlueMove('S');
-    } else if (blueO.isSelected()) {
-      game.setBlueMove('O');
+    if (game != null) {
+      if (blueS.isSelected()) {
+        game.setBlueMove('S');
+      } else if (blueO.isSelected()) {
+        game.setBlueMove('O');
+      }
     }
   }
-  
+
   public void setRedMove() {
-    if (redS.isSelected()) {
-      game.setRedMove('S');
-    } else if (redO.isSelected()) {
-      game.setRedMove('O');
+    if (game != null) {
+      if (redS.isSelected()) {
+        game.setRedMove('S');
+      } else if (redO.isSelected()) {
+        game.setRedMove('O');
+      }
     }
   }
-  
+
   public void setStatusLabels() {
     gameStatus.setText("Current Turn: Blue");
-    
+
     if (simpleGame.isSelected()) {
       gameScore.setText("");
     } else if (generalGame.isSelected()) {
-      gameScore.setText("Blue: 0 | Red: 0"); 
+      gameScore.setText("Blue: 0 | Red: 0");
     }
   }
-  
+
   public void startNewGame() {
     try {
       if (!(simpleGame.isSelected() || generalGame.isSelected())) {
         throw new RuntimeException("Please Select a Game Mode");
       }
       setBoardSize();
+      setBluePlayer();
+      setRedPlayer();
+      setBlueMove();
+      setRedMove();
       game.startGame();
       setUpBoard();
       setStatusLabels();
-      // Make sure moves still correspond to what is selected, instead of reset to S
-      setBlueMove();
-      setRedMove();
-      // Disable the ability to change board size and game mode once game has started
+      lineOverlay.layout();
+      drawBoard();
+
+      if (game.getCurrentPlayer() instanceof ComputerPlayer) {
+        handleComputerMovesWithDelay();
+      }
+
+      // Disable the ability to change game settings once game has started
       simpleGame.setDisable(true);
       generalGame.setDisable(true);
-      sizeTextField.setDisable(true);
+      sizeTextField.setDisable(true); 
       newGameButton.setDisable(true);
+      blueHuman.setDisable(true);
+      blueComp.setDisable(true);
+      redHuman.setDisable(true);
+      redComp.setDisable(true);
     } catch (RuntimeException e) {
       errorLabel.setText(e.toString());
     }
   }
-  
+
   public void resetGame() {
     game.resetGame();
     setUpBoard();
     setStatusLabels();
   }
-  
+
   public void endGame() {
     // Set game window back to clean
     game = null;
     clearBoard();
     gameStatus.setText("");
     gameScore.setText("");
-    
+
     enableSelection();
   }
-  
+
   public void enableSelection() {
     // Allow Game Setup Buttons to be Interactable Again
     simpleGame.setDisable(false);
     generalGame.setDisable(false);
     sizeTextField.setDisable(false);
+    blueHuman.setDisable(false);
+    blueComp.setDisable(false);
+    redHuman.setDisable(false);
+    redComp.setDisable(false);
     newGameButton.setDisable(false);
-    
+
     // Clear Previous Game Settings
     simpleGame.setSelected(false);
     generalGame.setSelected(false);
     sizeTextField.clear();
   }
-  
+
   public void drawLine(int r1, int c1, int r2, int c2, Paint color) {
     // Line starts/ends (row/col) cells over, then halfway into cell
     double startX = (c1 * 50) + 25;
     double startY = (r1 * 50) + 25;
     double endX = (c2 * 50) + 25;
     double endY = (r2 * 50) + 25;
-    
+
     // Offset from centering grid
     startX += grid.getTranslateX();
     startY += grid.getTranslateY();
     endX += grid.getTranslateX();
     endY += grid.getTranslateY();
-    
+
     Line line = new Line(startX, startY, endX, endY);
     line.setStroke(color);
     line.setStrokeWidth(2);
-   
+
     // Add to lineOverlay, rather than gridSquares, so line can overlap the board
     lineOverlay.getChildren().add(line);
+  }
+
+  private void handleComputerMovesWithDelay() {
+    if (game.getCurrentPlayer() instanceof ComputerPlayer && game.getGameStatus() == SosGame.GameStatus.PLAYING) {
+      PauseTransition pause = new PauseTransition(Duration.seconds(1));
+      pause.setOnFinished(event -> {
+
+        game.selectMove(0, 0);
+        drawBoard();
+        displayGameStatus();
+
+        if (game.getCurrentPlayer() instanceof ComputerPlayer && game.getGameStatus() == SosGame.GameStatus.PLAYING) {
+          handleComputerMovesWithDelay();
+        }
+
+      });
+      pause.play();
+    }
+  }
+
+  public void displayGameStatus() {
+    gameScore.setText(game.showScore());
+
+    if (game.getGameStatus() == SosGame.GameStatus.PLAYING) {
+      if (game.getTurn() == 'B') {
+        gameStatus.setText("Current Turn: Blue");
+      } else {
+        gameStatus.setText("Current Turn: Red");
+      }
+    } else if (game.getGameStatus() == SosGame.GameStatus.BLUE_WON) {
+      gameStatus.setText("Blue Won!");
+    } else if (game.getGameStatus() == SosGame.GameStatus.RED_WON) {
+      gameStatus.setText("Red Won!");
+    } else if (game.getGameStatus() == SosGame.GameStatus.DRAW) {
+      gameStatus.setText("Draw Game");
+    }
   }
 
   public class GridSquare extends Pane {
 
     private int row, col;
-    
+
     public GridSquare(int row, int col) {
       this.row = row;
       this.col = col;
@@ -417,51 +508,38 @@ public class SosGui extends Application {
       this.setPrefSize(50, 50);
       this.setOnMouseClicked(e -> handleMouseClick());
     }
-    
-    private void handleMouseClick() {      
-      if (game.getGameState() == SosGame.GameState.PLAYING) {
-        game.makeMove(row, col);
+
+    private void handleMouseClick() {
+      if (game.getGameStatus() == SosGame.GameStatus.PLAYING) {
+        game.selectMove(row, col);
+        game.updateGameStatus();
         drawBoard();
       }
-      
-      if (game.getGameState() != SosGame.GameState.PLAYING) {
+
+      if (game.getGameStatus() != SosGame.GameStatus.PLAYING) {
         enableSelection();
       }
-      
+
       displayGameStatus();
+      
+      if (game.getCurrentPlayer() instanceof ComputerPlayer) {
+        handleComputerMovesWithDelay();
+      }
     }
-    
+
     public void drawS() {
       Text letter = new Text("S");
       this.getChildren().add(letter);
-      letter.setX(this.getHeight()/2);
-      letter.setY(this.getWidth()/2);
-      
+      letter.setX(this.getHeight() / 2);
+      letter.setY(this.getWidth() / 2);
+
     }
-    
+
     public void drawO() {
       Text letter = new Text("O");
       this.getChildren().add(letter);
-      letter.setX(this.getHeight()/2);
-      letter.setY(this.getWidth()/2);
-    }
-    
-    private void displayGameStatus() {
-      gameScore.setText(game.showScore());
-      
-      if(game.getGameState() == SosGame.GameState.PLAYING) {
-        if(game.getTurn() == 'B') {
-          gameStatus.setText("Current Turn: Blue");
-        } else {
-          gameStatus.setText("Current Turn: Red");
-        }
-      } else if (game.getGameState() == SosGame.GameState.BLUE_WON) {
-        gameStatus.setText("Blue Won!");
-      } else if (game.getGameState() == SosGame.GameState.RED_WON) {
-        gameStatus.setText("Red Won!");
-      } else if (game.getGameState() == SosGame.GameState.DRAW) {
-        gameStatus.setText("Draw Game");
-      }
+      letter.setX(this.getHeight() / 2);
+      letter.setY(this.getWidth() / 2);
     }
 
   }
