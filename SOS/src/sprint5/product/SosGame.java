@@ -1,6 +1,12 @@
-package sprint4.product;
+package sprint5.product;
 
 import java.util.ArrayList;
+import java.util.Scanner;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 
 public abstract class SosGame {
 
@@ -15,13 +21,16 @@ public abstract class SosGame {
   protected int totalRows;
   protected int totalCols;
   protected GameStatus currentGameStatus;
-  protected char turn;
-  protected Player bluePlayer = new Player('S');
-  protected Player redPlayer = new Player('S');
+  protected Player bluePlayer = new Player("Blue", 'S');
+  protected Player redPlayer = new Player("Red", 'S');
   protected Player currentPlayer = bluePlayer;
 
   protected Cell[][] board;
   protected ArrayList<SosSequence> sosSequences = new ArrayList<SosSequence>();
+
+  protected File moveHistory = new File("moveHistory.txt");
+  protected ArrayList<String> recordedMoves = new ArrayList<String>();
+  protected boolean isRecording;
 
   public SosGame() {
     if (totalRows == 0) {
@@ -43,18 +52,16 @@ public abstract class SosGame {
 
     bluePlayer.resetSosCount();
     redPlayer.resetSosCount();
+    sosSequences.clear();
+    recordedMoves.clear();
 
     currentGameStatus = GameStatus.PLAYING;
-    turn = 'B';
-    setCurrentPlayer();
-    
-    if (bluePlayer instanceof ComputerPlayer) {
-      selectMove(-1,-1);
-    }
+    currentPlayer = bluePlayer;
   }
 
-  public void resetGame() {
+  public ArrayList<String[]> replayGame() {
     startGame();
+    return loadMovesFromFile(moveHistory);
   }
 
   // Set Functions
@@ -80,23 +87,23 @@ public abstract class SosGame {
   public void setBluePlayer(char type) {
     char currentMove = bluePlayer.getMove();
     if (type == 'H') {
-      bluePlayer = new Player(currentMove);
+      bluePlayer = new Player("Blue", currentMove);
     } else if (type == 'C') {
-      bluePlayer = new ComputerPlayer(currentMove);
-    } 
+      bluePlayer = new ComputerPlayer("Blue", currentMove);
+    }
   }
 
   public void setRedPlayer(char type) {
     char currentMove = redPlayer.getMove();
     if (type == 'H') {
-      redPlayer = new Player(currentMove);
+      redPlayer = new Player("Red", currentMove);
     } else if (type == 'C') {
-      redPlayer = new ComputerPlayer(currentMove);
+      redPlayer = new ComputerPlayer("Red", currentMove);
     }
   }
-  
-  public void setCurrentPlayer() {
-    currentPlayer = (turn == 'B') ? bluePlayer : redPlayer;
+
+  public void setRecording(boolean recording) {
+    isRecording = recording;
   }
 
   // Get Functions
@@ -106,10 +113,6 @@ public abstract class SosGame {
 
   public int getTotalColumns() {
     return totalCols;
-  }
-
-  public char getTurn() {
-    return turn;
   }
 
   public GameStatus getGameStatus() {
@@ -123,7 +126,7 @@ public abstract class SosGame {
   public Player getRedPlayer() {
     return redPlayer;
   }
-  
+
   public Player getCurrentPlayer() {
     return currentPlayer;
   }
@@ -140,15 +143,25 @@ public abstract class SosGame {
     }
   }
 
+  public int getNumberOfEmptyCells() {
+    int count = 0;
+    for (int row = 0; row < totalRows; row++) {
+      for (int col = 0; col < totalCols; col++) {
+        if (board[row][col] == Cell.EMPTY) {
+          count++;
+        }
+      }
+    }
+    return count;
+  }
+  
+  public boolean isGameRecorded() {
+    return isRecording;
+  }
+
   // Other Game Functions
   protected void switchTurn() {
-    if (turn == 'B') {
-      turn = 'R';
-      currentPlayer = redPlayer;
-    } else if (turn == 'R') {
-      turn = 'B';
-      currentPlayer = bluePlayer;
-    }
+    currentPlayer = (currentPlayer == bluePlayer) ? redPlayer : bluePlayer;
   }
 
   public void placeLetter(int row, int col, char choice) {
@@ -160,16 +173,20 @@ public abstract class SosGame {
   }
 
   public void selectMove(int row, int col) {
-
     if (currentPlayer instanceof ComputerPlayer) {
       int[] move = ((ComputerPlayer) currentPlayer).calculateMove(this);
-      makeMove(move[0], move[1], currentPlayer.getMove());
+      if (isValidMove(move[0], move[1])) {
+        makeMove(move[0], move[1], currentPlayer.getMove());
+      }
     } else {
-      makeMove(row, col, currentPlayer.getMove());
+      if (isValidMove(row, col)) {
+        makeMove(row, col, currentPlayer.getMove());
+      }
     }
   }
 
   public void updateGameStatus() {
+
     if (hasBlueWon()) {
       currentGameStatus = GameStatus.BLUE_WON;
     } else if (hasRedWon()) {
@@ -177,10 +194,53 @@ public abstract class SosGame {
     } else if (isDraw()) {
       currentGameStatus = GameStatus.DRAW;
     }
+    
+    if (!(currentGameStatus == GameStatus.PLAYING || currentGameStatus == GameStatus.SELECTION)) {
+      saveMoveHistory(moveHistory);
+    }
+
+  }
+
+  // Record/Replay Functions
+  protected void recordMove(int row, int col, char moveType) {
+    String move = row + "," + col + "," + moveType;
+    recordedMoves.add(move);
+  }
+
+  protected void saveMoveHistory(File file) {
+    try {
+      FileWriter moveFile = new FileWriter(file);
+      BufferedWriter writer = new BufferedWriter(moveFile);
+      for (int i = 0; i < recordedMoves.size(); i++) {
+        writer.write(recordedMoves.get(i));
+        writer.newLine();
+      }
+      writer.close();
+    } catch (IOException e) {
+      System.out.println("Error handling file");
+    }
+    
+  }
+  
+  protected ArrayList<String[]> loadMovesFromFile(File file){
+    ArrayList<String[]> moves = new ArrayList<String[]>();
+    
+    try {
+      Scanner reader = new Scanner(file);
+      while (reader.hasNextLine()) {
+        String temp = reader.nextLine();
+        moves.add(temp.split(","));
+      }
+      reader.close();
+    } catch (FileNotFoundException e){
+      System.out.println("Error reading file");
+    }
+    
+    return moves;
   }
 
   // Abstract Functions
-  public abstract void makeMove(int row, int col, char move);
+  public abstract void makeMove(int row, int col, char moveType);
 
   public abstract String showScore();
 
@@ -240,7 +300,7 @@ public abstract class SosGame {
     // board cell
     if (!(row == 0 || row == totalRows - 1)) {
       if (board[row - 1][col] == Cell.S && board[row + 1][col] == Cell.S) {
-        sosSequences.add(new SosSequence((row - 1), col, (row + 1), col, turn));
+        sosSequences.add(new SosSequence((row - 1), col, (row + 1), col, currentPlayer));
         sosCount++;
       }
     }
@@ -249,7 +309,7 @@ public abstract class SosGame {
     // left/rightmost board cell
     if (!(col == 0 || col == totalCols - 1)) {
       if (board[row][col - 1] == Cell.S && board[row][col + 1] == Cell.S) {
-        sosSequences.add(new SosSequence(row, (col - 1), row, (col + 1), turn));
+        sosSequences.add(new SosSequence(row, (col - 1), row, (col + 1), currentPlayer));
         sosCount++;
       }
     }
@@ -258,12 +318,12 @@ public abstract class SosGame {
     if (!((row == 0 || row == totalRows - 1) || (col == 0 || col == totalCols - 1))) {
       // Top left to bottom right
       if (board[row - 1][col - 1] == Cell.S && board[row + 1][col + 1] == Cell.S) {
-        sosSequences.add(new SosSequence((row - 1), (col - 1), (row + 1), (col + 1), turn));
+        sosSequences.add(new SosSequence((row - 1), (col - 1), (row + 1), (col + 1), currentPlayer));
         sosCount++;
       }
       // Bottom left to top right
       if (board[row + 1][col - 1] == Cell.S && board[row - 1][col + 1] == Cell.S) {
-        sosSequences.add(new SosSequence((row + 1), (col - 1), (row - 1), (col + 1), turn));
+        sosSequences.add(new SosSequence((row + 1), (col - 1), (row - 1), (col + 1), currentPlayer));
         sosCount++;
       }
     }
@@ -279,13 +339,13 @@ public abstract class SosGame {
     // Any S placed in at least the 3rd row can be checked for a vertical SOS going
     // up
     if (row >= 2 && board[row - 1][col] == Cell.O && board[row - 2][col] == Cell.S) {
-      sosSequences.add(new SosSequence(row, col, (row - 2), col, turn));
+      sosSequences.add(new SosSequence(row, col, (row - 2), col, currentPlayer));
       sosCount++;
     }
     // Any S placed in at most the 3rd to last row can be checked for a vertical SOS
     // going down
     if (row <= totalRows - 3 && board[row + 1][col] == Cell.O && board[row + 2][col] == Cell.S) {
-      sosSequences.add(new SosSequence(row, col, (row + 2), col, turn));
+      sosSequences.add(new SosSequence(row, col, (row + 2), col, currentPlayer));
       sosCount++;
     }
 
@@ -294,13 +354,13 @@ public abstract class SosGame {
     // Any S placed in at least the 3rd column can be checked for a horizontal SOS
     // going left
     if (col >= 2 && board[row][col - 1] == Cell.O && board[row][col - 2] == Cell.S) {
-      sosSequences.add(new SosSequence(row, col, row, (col - 2), turn));
+      sosSequences.add(new SosSequence(row, col, row, (col - 2), currentPlayer));
       sosCount++;
     }
     // Any S placed in at most the 3rd to last column can be checked for a
     // horizontal SOS going right
     if (col <= totalCols - 3 && board[row][col + 1] == Cell.O && board[row][col + 2] == Cell.S) {
-      sosSequences.add(new SosSequence(row, col, row, (col + 2), turn));
+      sosSequences.add(new SosSequence(row, col, row, (col + 2), currentPlayer));
       sosCount++;
     }
 
@@ -309,33 +369,34 @@ public abstract class SosGame {
     // Check for bottom right to top left SOS | placed in at least 3rd row and 3rd
     // column
     if (row >= 2 && col >= 2 && board[row - 1][col - 1] == Cell.O && board[row - 2][col - 2] == Cell.S) {
-      sosSequences.add(new SosSequence(row, col, (row - 2), (col - 2), turn));
+      sosSequences.add(new SosSequence(row, col, (row - 2), (col - 2), currentPlayer));
       sosCount++;
     }
     // Check for bottom left to top right SOS | placed in at least 3rd row at most
     // 3rd to last column
     if (row >= 2 && col <= totalCols - 3 && board[row - 1][col + 1] == Cell.O && board[row - 2][col + 2] == Cell.S) {
-      sosSequences.add(new SosSequence(row, col, (row - 2), (col + 2), turn));
+      sosSequences.add(new SosSequence(row, col, (row - 2), (col + 2), currentPlayer));
       sosCount++;
     }
     // Check for top right to bottom left SOS | placed in at most 3rd to last row
     // and at least 3rd column
     if (row <= totalRows - 3 && col >= 2 && board[row + 1][col - 1] == Cell.O && board[row + 2][col - 2] == Cell.S) {
-      sosSequences.add(new SosSequence(row, col, (row + 2), (col - 2), turn));
+      sosSequences.add(new SosSequence(row, col, (row + 2), (col - 2), currentPlayer));
       sosCount++;
     }
     // Check for top left to bottom right SOS | placed in at most 3rd to last row
     // and 3rd to last column
     if (row <= totalRows - 3 && col <= totalCols - 3 && board[row + 1][col + 1] == Cell.O
         && board[row + 2][col + 2] == Cell.S) {
-      sosSequences.add(new SosSequence(row, col, (row + 2), (col + 2), turn));
+      sosSequences.add(new SosSequence(row, col, (row + 2), (col + 2), currentPlayer));
       sosCount++;
     }
 
     return sosCount;
   }
 
-  // Versions of hasMadeSos that only checks for a potential SOS formation | Make no modifications
+  // Versions of hasMadeSos that only checks for a potential SOS formation | Make
+  // no modifications
   protected boolean checkSosFromO(int row, int col) {
 
     boolean verticalO = (!(row == 0 || row == totalRows - 1)
@@ -348,12 +409,10 @@ public abstract class SosGame {
         && ((board[row - 1][col - 1] == Cell.S && board[row + 1][col + 1] == Cell.S)
             || (board[row + 1][col - 1] == Cell.S && board[row - 1][col + 1] == Cell.S)));
 
-    
-    
     return verticalO || horizontalO || diagonalO;
 
   }
-  
+
   protected boolean checkSosFromS(int row, int col) {
     boolean verticalS = (row >= 2 && board[row - 1][col] == Cell.O && board[row - 2][col] == Cell.S)
         || (row <= totalRows - 3 && board[row + 1][col] == Cell.O && board[row + 2][col] == Cell.S);
@@ -366,7 +425,7 @@ public abstract class SosGame {
         || (row <= totalRows - 3 && col >= 2 && board[row + 1][col - 1] == Cell.O && board[row + 2][col - 2] == Cell.S)
         || (row <= totalRows - 3 && col <= totalCols - 3 && board[row + 1][col + 1] == Cell.O
             && board[row + 2][col + 2] == Cell.S);
-    
+
     return verticalS || horizontalS || diagonalS;
   }
 

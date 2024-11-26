@@ -1,4 +1,4 @@
-package sprint4.product;
+package sprint5.product;
 
 public class SimpleGame extends SosGame {
 
@@ -13,15 +13,17 @@ public class SimpleGame extends SosGame {
 
   @Override
   public void makeMove(int row, int col, char move) {
-    if (isValidMove(row, col)) {
-      placeLetter(row, col, move);
-
-      currentPlayer.increaseSosCount(hasMadeSos(row, col, move));
-      
-      updateGameStatus();
-
-      switchTurn();
+    placeLetter(row, col, move);
+    
+    if (isRecording) {
+      recordMove(row, col, move);
     }
+
+    currentPlayer.increaseSosCount(hasMadeSos(row, col, move));
+
+    updateGameStatus();
+
+    switchTurn();
   }
 
   @Override
@@ -39,5 +41,5 @@ public class SimpleGame extends SosGame {
     }
     return false;
   }
-  
+
 }

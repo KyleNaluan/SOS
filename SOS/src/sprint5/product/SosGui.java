@@ -1,4 +1,4 @@
-package sprint4.product;
+package sprint5.product;
 
 import java.util.ArrayList;
 
@@ -32,10 +32,17 @@ public class SosGui extends Application {
   private GridSquare[][] gridSquares;
   private GridPane grid;
   private Pane lineOverlay;
+  private BorderPane root;
 
+  private Text title;
+  private Text blueLabel;
+  private Text redLabel;
+  private Label sizeLabel;
   private Label gameStatus = new Label("");
   private Label gameScore = new Label("");
   private Label errorLabel;
+  private Line blueLabelLine;
+  private Line redLabelLine;
 
   private RadioButton simpleGame;
   private RadioButton generalGame;
@@ -48,6 +55,7 @@ public class SosGui extends Application {
   private RadioButton redO;
   private RadioButton redComp;
 
+  private CheckBox recordBox;
   private Button replayButton;
   private Button newGameButton;
   private Button endGameButton;
@@ -65,33 +73,54 @@ public class SosGui extends Application {
   public void start(Stage primaryStage) throws Exception {
     primaryStage.setTitle("SOS");
 
-    // Plain Text
-    Text title = new Text("SOS");
-    Text blueLabel = new Text("Blue Player");
-    Text redLabel = new Text("Red Player");
+    setUpText();
+    setUpLabels();
+    setUpLines();
+    setUpButtons();
+    setUpCheckBoxes();
+    setUpRadioButtons();
+    setUpToggleGroups();
+    setUpTextFields();
+    setUpLayout();
+    setUpActionListeners();
+
+    // Scene
+    Scene scene = new Scene(root, 1000, 500);
+    scene.getStylesheets().add(getClass().getResource("Style.css").toExternalForm());
+    primaryStage.setScene(scene);
+    primaryStage.show();
+  }
+
+  private void setUpText() {
+    title = new Text("SOS");
+    blueLabel = new Text("Blue Player");
+    redLabel = new Text("Red Player");
 
     title.getStyleClass().add("normal-text");
     title.getStyleClass().add("title");
     blueLabel.getStyleClass().add("normal-text");
     redLabel.getStyleClass().add("normal-text");
+  }
 
-    // Labels
-    Label sizeLabel = new Label("Board Size:");
+  private void setUpLabels() {
+    sizeLabel = new Label("Board Size:");
     errorLabel = new Label("");
     errorLabel.getStyleClass().add("label-error");
+  }
 
-    // Lines
-    Line blueLabelLine = new Line();
+  private void setUpLines() {
+    blueLabelLine = new Line();
     blueLabelLine.getStyleClass().add("line-blue");
     blueLabelLine.setStartX(0);
     blueLabelLine.setEndX(110);
 
-    Line redLabelLine = new Line();
+    redLabelLine = new Line();
     redLabelLine.getStyleClass().add("line-red");
     redLabelLine.setStartX(0);
     redLabelLine.setEndX(110);
+  }
 
-    // Buttons
+  private void setUpButtons() {
     replayButton = new Button("Replay");
     newGameButton = new Button("New Game");
     newGameButton.getStyleClass().add("button-blue");
@@ -100,18 +129,15 @@ public class SosGui extends Application {
     replayButton.setPrefWidth(100);
     newGameButton.setPrefWidth(100);
     endGameButton.setPrefWidth(100);
-
-    replayButton.setOnAction(e -> resetGame());
-    newGameButton.setOnAction(e -> startNewGame());
-    endGameButton.setOnAction(e -> endGame());
-
+    
     replayButton.setDisable(true);
+  }
 
-    // Check boxes
-    CheckBox recordBox = new CheckBox("Record Game");
-    recordBox.setDisable(true);
+  private void setUpCheckBoxes() {
+    recordBox = new CheckBox("Record Game");
+  }
 
-    // Radio Buttons
+  private void setUpRadioButtons() {
     simpleGame = new RadioButton("Simple Game");
     generalGame = new RadioButton("General Game");
     blueHuman = new RadioButton("Human");
@@ -122,10 +148,12 @@ public class SosGui extends Application {
     redS = new RadioButton("S");
     redO = new RadioButton("O");
     redComp = new RadioButton("Computer");
+  }
 
-    // Action Listeners
+  private void setUpActionListeners() {
     simpleGame.setOnAction(e -> selectGame());
     generalGame.setOnAction(e -> selectGame());
+    sizeTextField.setOnAction(e -> setBoardSize());
 
     blueS.setOnAction(e -> setBlueMove());
     blueO.setOnAction(e -> setBlueMove());
@@ -137,7 +165,13 @@ public class SosGui extends Application {
     redHuman.setOnAction(e -> setRedPlayer());
     redComp.setOnAction(e -> setRedPlayer());
 
-    // Toggle Groups
+    recordBox.setOnAction(e -> setRecording());
+    replayButton.setOnAction(e -> replayGame());
+    newGameButton.setOnAction(e -> startNewGame());
+    endGameButton.setOnAction(e -> endGame());
+  }
+
+  private void setUpToggleGroups() {
     ToggleGroup gameSelectButtons = new ToggleGroup();
     ToggleGroup bluePlayerButtons = new ToggleGroup();
     ToggleGroup blueLetterButtons = new ToggleGroup();
@@ -159,13 +193,14 @@ public class SosGui extends Application {
     blueS.setSelected(true);
     redHuman.setSelected(true);
     redS.setSelected(true);
+  }
 
-    // Text Fields
+  private void setUpTextFields() {
     sizeTextField = new TextField();
     sizeTextField.setPrefWidth(50);
+  }
 
-    sizeTextField.setOnAction(e -> setBoardSize());
-
+  private void setUpLayout() {
     // Spacers
     Pane spacer = new Pane();
     HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -183,7 +218,7 @@ public class SosGui extends Application {
     grid.translateYProperty().bind(Bindings.divide(lineOverlay.heightProperty().subtract(grid.heightProperty()), 2));
 
     // Layout
-    BorderPane root = new BorderPane();
+    root = new BorderPane();
     HBox header = new HBox(title, simpleGame, generalGame, spacer, sizeLabel, sizeTextField);
     HBox errorMessage = new HBox(errorLabel);
     VBox top = new VBox(header, errorMessage);
@@ -218,12 +253,6 @@ public class SosGui extends Application {
     left.setSpacing(5);
     right.setSpacing(5);
     resetButtons.setSpacing(5);
-
-    // Scene
-    Scene scene = new Scene(root, 1000, 500);
-    scene.getStylesheets().add(getClass().getResource("Style.css").toExternalForm());
-    primaryStage.setScene(scene);
-    primaryStage.show();
   }
 
   public void setUpBoard() {
@@ -265,7 +294,7 @@ public class SosGui extends Application {
     int c1;
     int r2;
     int c2;
-    char player;
+    Player player;
     Paint color;
 
     for (int i = 0; i < sosSequences.size(); i++) {
@@ -275,7 +304,7 @@ public class SosGui extends Application {
       c2 = sosSequences.get(i).getC2();
       player = sosSequences.get(i).getPlayer();
 
-      if (player == 'B') {
+      if (player.getName() == "Blue") {
         color = Color.BLUE;
       } else {
         color = Color.RED;
@@ -307,38 +336,39 @@ public class SosGui extends Application {
         errorLabel.setText("Invalid Input");
       }
     }
+  }
 
+  private void setRecording() {
+    if (game != null) {
+      game.setRecording(recordBox.isSelected());
+    }
   }
 
   private void setBluePlayer() {
-    if (blueHuman.isSelected()) {
-      if (game != null) {
+    if (game != null) {
+      if (blueHuman.isSelected()) {
         game.setBluePlayer('H');
-      }
-      blueS.setDisable(false);
-      blueO.setDisable(false);
-    } else {
-      if (game != null) {
+        blueS.setDisable(false);
+        blueO.setDisable(false);
+      } else {
         game.setBluePlayer('C');
+        blueS.setDisable(true);
+        blueO.setDisable(true);
       }
-      blueS.setDisable(true);
-      blueO.setDisable(true);
     }
   }
 
   private void setRedPlayer() {
-    if (redHuman.isSelected()) {
-      if (game != null) {
+    if (game != null) {
+      if (redHuman.isSelected()) {
         game.setRedPlayer('H');
-      }
-      redS.setDisable(false);
-      redO.setDisable(false);
-    } else {
-      if (game != null) {
+        redS.setDisable(false);
+        redO.setDisable(false);
+      } else {
         game.setRedPlayer('C');
+        redS.setDisable(true);
+        redO.setDisable(true);
       }
-      redS.setDisable(true);
-      redO.setDisable(true);
     }
   }
 
@@ -382,35 +412,55 @@ public class SosGui extends Application {
       setRedPlayer();
       setBlueMove();
       setRedMove();
+      setRecording();
       game.startGame();
       setUpBoard();
       setStatusLabels();
       lineOverlay.layout();
       displayGameStatus();
-      drawBoard();
 
       if (game.getCurrentPlayer() instanceof ComputerPlayer) {
         handleComputerMovesWithDelay();
       }
 
-      // Disable the ability to change game settings once game has started
-      simpleGame.setDisable(true);
-      generalGame.setDisable(true);
-      sizeTextField.setDisable(true); 
-      newGameButton.setDisable(true);
-      blueHuman.setDisable(true);
-      blueComp.setDisable(true);
-      redHuman.setDisable(true);
-      redComp.setDisable(true);
+      disableSelection();
+
     } catch (RuntimeException e) {
       errorLabel.setText(e.toString());
     }
   }
 
-  public void resetGame() {
-    game.resetGame();
+  public void replayGame() {
+    ArrayList<String[]> moves = game.replayGame();
     setUpBoard();
     setStatusLabels();
+    lineOverlay.layout();
+    displayGameStatus();
+    handleReplayMovesWithDelay(moves, 0);
+
+      
+  }
+
+  private void handleReplayMovesWithDelay(ArrayList<String[]> moves, int index) {
+    if (index == moves.size()) {
+      return;
+    }
+    
+    int row = Integer.parseInt(moves.get(index)[0]);
+    int col = Integer.parseInt(moves.get(index)[1]);
+    char moveType = moves.get(index)[2].charAt(0);
+    
+    PauseTransition pause = new PauseTransition(Duration.seconds(1));
+
+    pause.setOnFinished(event -> {
+
+      game.makeMove(row, col, moveType);
+      drawBoard();
+      displayGameStatus();
+      
+      handleReplayMovesWithDelay(moves, index+1);
+    });
+    pause.play();
   }
 
   public void endGame() {
@@ -432,12 +482,27 @@ public class SosGui extends Application {
     blueComp.setDisable(false);
     redHuman.setDisable(false);
     redComp.setDisable(false);
+    recordBox.setDisable(false);
     newGameButton.setDisable(false);
+    replayButton.setDisable(true);
 
     // Clear Previous Game Settings
     simpleGame.setSelected(false);
     generalGame.setSelected(false);
     sizeTextField.clear();
+  }
+
+  public void disableSelection() {
+    simpleGame.setDisable(true);
+    generalGame.setDisable(true);
+    sizeTextField.setDisable(true);
+    newGameButton.setDisable(true);
+    recordBox.setDisable(true);
+    replayButton.setDisable(true);
+    blueHuman.setDisable(true);
+    blueComp.setDisable(true);
+    redHuman.setDisable(true);
+    redComp.setDisable(true);
   }
 
   public void drawLine(int r1, int c1, int r2, int c2, Paint color) {
@@ -462,7 +527,7 @@ public class SosGui extends Application {
   }
 
   private void handleComputerMovesWithDelay() {
-    if (game.getCurrentPlayer() instanceof ComputerPlayer && game.getGameStatus() == SosGame.GameStatus.PLAYING) {
+    if (game.getGameStatus() == SosGame.GameStatus.PLAYING) {
       PauseTransition pause = new PauseTransition(Duration.seconds(1));
       pause.setOnFinished(event -> {
 
@@ -483,17 +548,25 @@ public class SosGui extends Application {
     gameScore.setText(game.showScore());
 
     if (game.getGameStatus() == SosGame.GameStatus.PLAYING) {
-      if (game.getTurn() == 'B') {
+      if (game.getCurrentPlayer().getName() == "Blue") {
         gameStatus.setText("Current Turn: Blue");
       } else {
         gameStatus.setText("Current Turn: Red");
       }
-    } else if (game.getGameStatus() == SosGame.GameStatus.BLUE_WON) {
-      gameStatus.setText("Blue Won!");
-    } else if (game.getGameStatus() == SosGame.GameStatus.RED_WON) {
-      gameStatus.setText("Red Won!");
-    } else if (game.getGameStatus() == SosGame.GameStatus.DRAW) {
-      gameStatus.setText("Draw Game");
+    } else {
+      if (game.getGameStatus() == SosGame.GameStatus.BLUE_WON) {
+        gameStatus.setText("Blue Won!");
+      } else if (game.getGameStatus() == SosGame.GameStatus.RED_WON) {
+        gameStatus.setText("Red Won!");
+      } else if (game.getGameStatus() == SosGame.GameStatus.DRAW) {
+        gameStatus.setText("Draw Game");
+      }
+
+      if (game.isGameRecorded()) {
+        replayButton.setDisable(false);
+      } else {
+        enableSelection();
+      }
     }
   }
 
@@ -515,17 +588,14 @@ public class SosGui extends Application {
         game.selectMove(row, col);
         game.updateGameStatus();
         drawBoard();
-      }
 
-      if (game.getGameStatus() != SosGame.GameStatus.PLAYING) {
-        enableSelection();
+        if (game.getCurrentPlayer() instanceof ComputerPlayer) {
+          handleComputerMovesWithDelay();
+        }
       }
 
       displayGameStatus();
-      
-      if (game.getCurrentPlayer() instanceof ComputerPlayer) {
-        handleComputerMovesWithDelay();
-      }
+
     }
 
     public void drawS() {
