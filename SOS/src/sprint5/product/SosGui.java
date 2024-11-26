@@ -255,7 +255,7 @@ public class SosGui extends Application {
     resetButtons.setSpacing(5);
   }
 
-  public void setUpBoard() {
+  private void setUpBoard() {
     clearBoard();
     int rows = game.getTotalRows();
     int cols = game.getTotalColumns();
@@ -269,12 +269,12 @@ public class SosGui extends Application {
     lineOverlay.getChildren().add(grid);
   }
 
-  public void clearBoard() {
+  private void clearBoard() {
     lineOverlay.getChildren().clear();
     grid.getChildren().clear();
   }
 
-  public void drawBoard() {
+  private void drawBoard() {
     // Draw S & O Characters
     for (int row = 0; row < game.getTotalRows(); row++) {
       for (int col = 0; col < game.getTotalColumns(); col++) {
@@ -382,7 +382,7 @@ public class SosGui extends Application {
     }
   }
 
-  public void setRedMove() {
+  private void setRedMove() {
     if (game != null) {
       if (redS.isSelected()) {
         game.setRedMove('S');
@@ -392,7 +392,7 @@ public class SosGui extends Application {
     }
   }
 
-  public void setStatusLabels() {
+  private void setStatusLabels() {
     gameStatus.setText("Current Turn: Blue");
 
     if (simpleGame.isSelected()) {
@@ -402,7 +402,7 @@ public class SosGui extends Application {
     }
   }
 
-  public void startNewGame() {
+  private void startNewGame() {
     try {
       if (!(simpleGame.isSelected() || generalGame.isSelected())) {
         throw new RuntimeException("Please Select a Game Mode");
@@ -430,15 +430,13 @@ public class SosGui extends Application {
     }
   }
 
-  public void replayGame() {
+  private void replayGame() {
     ArrayList<String[]> moves = game.replayGame();
     setUpBoard();
     setStatusLabels();
     lineOverlay.layout();
     displayGameStatus();
     handleReplayMovesWithDelay(moves, 0);
-
-      
   }
 
   private void handleReplayMovesWithDelay(ArrayList<String[]> moves, int index) {
@@ -446,9 +444,11 @@ public class SosGui extends Application {
       return;
     }
     
-    int row = Integer.parseInt(moves.get(index)[0]);
-    int col = Integer.parseInt(moves.get(index)[1]);
-    char moveType = moves.get(index)[2].charAt(0);
+    String[] move = moves.get(index);
+    
+    int row = Integer.parseInt(move[0]);
+    int col = Integer.parseInt(move[1]);
+    char moveType = move[2].charAt(0);
     
     PauseTransition pause = new PauseTransition(Duration.seconds(1));
 
@@ -463,7 +463,7 @@ public class SosGui extends Application {
     pause.play();
   }
 
-  public void endGame() {
+  private void endGame() {
     // Set game window back to clean
     game = null;
     clearBoard();
@@ -473,7 +473,7 @@ public class SosGui extends Application {
     enableSelection();
   }
 
-  public void enableSelection() {
+  private void enableSelection() {
     // Allow Game Setup Buttons to be Interactable Again
     simpleGame.setDisable(false);
     generalGame.setDisable(false);
@@ -492,7 +492,7 @@ public class SosGui extends Application {
     sizeTextField.clear();
   }
 
-  public void disableSelection() {
+  private void disableSelection() {
     simpleGame.setDisable(true);
     generalGame.setDisable(true);
     sizeTextField.setDisable(true);
@@ -505,7 +505,7 @@ public class SosGui extends Application {
     redComp.setDisable(true);
   }
 
-  public void drawLine(int r1, int c1, int r2, int c2, Paint color) {
+  private void drawLine(int r1, int c1, int r2, int c2, Paint color) {
     // Line starts/ends (row/col) cells over, then halfway into cell
     double startX = (c1 * 50) + 25;
     double startY = (r1 * 50) + 25;
@@ -544,7 +544,7 @@ public class SosGui extends Application {
     }
   }
 
-  public void displayGameStatus() {
+  private void displayGameStatus() {
     gameScore.setText(game.showScore());
 
     if (game.getGameStatus() == SosGame.GameStatus.PLAYING) {
